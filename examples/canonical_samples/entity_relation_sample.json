@@ -1,0 +1,32 @@
+{
+  "id": "er-001",
+  "text": "Alice joined Contoso in Seoul in 2025.",
+  "lang": "en",
+  "source": "synthetic_public",
+  "task_types": ["entity", "relation"],
+  "schema": {
+    "kv": [],
+    "entity": ["PERSON", "ORG", "LOC", "DATE"],
+    "relation": ["works_for", "located_in"]
+  },
+  "answer": {
+    "kv": {},
+    "entity": [
+      {"text": "Alice", "type": "PERSON", "start": 0, "end": 5},
+      {"text": "Contoso", "type": "ORG", "start": 13, "end": 20},
+      {"text": "Seoul", "type": "LOC", "start": 24, "end": 29},
+      {"text": "2025", "type": "DATE", "start": 33, "end": 37}
+    ],
+    "relation": [
+      {"head": "Alice", "head_type": "PERSON", "relation": "works_for", "tail": "Contoso", "tail_type": "ORG"},
+      {"head": "Contoso", "head_type": "ORG", "relation": "located_in", "tail": "Seoul", "tail_type": "LOC"}
+    ]
+  },
+  "meta": {
+    "dataset": "instructie",
+    "license": "TODO_VERIFY",
+    "split": "train",
+    "notes": "Synthetic example.",
+    "default_enabled": true
+  }
+}

@@ -1,0 +1,11 @@
+name: unified_ie_example
+inputs:
+  - data/processed/instructie_canonical.jsonl
+  - data/processed/internal_kv_template.jsonl
+task_types:
+  - kv
+  - entity
+  - relation
+seed: 42
+output: data/processed/unified.jsonl
+split_output_dir: data/processed/splits

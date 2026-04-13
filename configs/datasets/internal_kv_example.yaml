@@ -1,0 +1,13 @@
+dataset_name: internal_kv_template
+source_name: internal
+text_column: text
+id_column: id
+language_column: lang
+kv_schema:
+  - invoice_id
+  - total_amount
+  - vendor_name
+  - issue_date
+split: train
+license: INTERNAL
+default_enabled: false

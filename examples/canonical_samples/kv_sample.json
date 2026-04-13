@@ -1,0 +1,29 @@
+{
+  "id": "kv-001",
+  "text": "Invoice #A-12 from ACME Corp totals 109000 KRW on 2026-03-01.",
+  "lang": "en",
+  "source": "synthetic_internal",
+  "task_types": ["kv"],
+  "schema": {
+    "kv": ["invoice_id", "vendor_name", "total_amount", "issue_date"],
+    "entity": [],
+    "relation": []
+  },
+  "answer": {
+    "kv": {
+      "invoice_id": "A-12",
+      "vendor_name": "ACME Corp",
+      "total_amount": "109000 KRW",
+      "issue_date": "2026-03-01"
+    },
+    "entity": [],
+    "relation": []
+  },
+  "meta": {
+    "dataset": "internal_kv_template",
+    "license": "INTERNAL",
+    "split": "train",
+    "notes": "Synthetic example.",
+    "default_enabled": false
+  }
+}

@@ -1,0 +1,13 @@
+name: instructie
+source: public seed dataset
+expected_task_types:
+  - entity
+  - relation
+license: TODO_VERIFY
+default_enabled: true
+raw_path: data/raw/instructie
+processed_path: data/processed/instructie_canonical.jsonl
+notes: |
+  InstructIE is the public default seed path in this PoC.
+  Relation extraction is treated as first-class.
+  Entity annotations may be incomplete or split-dependent depending on the upstream asset version.

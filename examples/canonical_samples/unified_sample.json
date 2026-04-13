@@ -1,0 +1,35 @@
+{
+  "id": "unified-001",
+  "text": "Bob from Fabrikam submitted PO-77 for 180000 KRW on 2026-04-10.",
+  "lang": "en",
+  "source": "synthetic_mixed",
+  "task_types": ["kv", "entity", "relation"],
+  "schema": {
+    "kv": ["po_id", "amount"],
+    "entity": ["PERSON", "ORG", "MONEY", "DATE"],
+    "relation": ["submitted_by", "issued_by"]
+  },
+  "answer": {
+    "kv": {
+      "po_id": "PO-77",
+      "amount": "180000 KRW"
+    },
+    "entity": [
+      {"text": "Bob", "type": "PERSON", "start": 0, "end": 3},
+      {"text": "Fabrikam", "type": "ORG", "start": 9, "end": 17},
+      {"text": "180000 KRW", "type": "MONEY", "start": 39, "end": 49},
+      {"text": "2026-04-10", "type": "DATE", "start": 53, "end": 63}
+    ],
+    "relation": [
+      {"head": "PO-77", "head_type": null, "relation": "submitted_by", "tail": "Bob", "tail_type": "PERSON"},
+      {"head": "PO-77", "head_type": null, "relation": "issued_by", "tail": "Fabrikam", "tail_type": "ORG"}
+    ]
+  },
+  "meta": {
+    "dataset": "mixed_demo",
+    "license": "INTERNAL",
+    "split": "dev",
+    "notes": "Synthetic example.",
+    "default_enabled": false
+  }
+}

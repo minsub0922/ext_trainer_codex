@@ -1,0 +1,25 @@
+datasets:
+  instructie:
+    source: public seed dataset
+    expected_task_types:
+      - entity
+      - relation
+    license: TODO_VERIFY
+    default_enabled: true
+    mode: public_seed
+  gollie_reference:
+    source: task structuring reference only
+    expected_task_types:
+      - kv
+      - entity
+      - relation
+    license: TODO_VERIFY
+    default_enabled: false
+    mode: reference_only
+  internal_kv_template:
+    source: internal data onboarding
+    expected_task_types:
+      - kv
+    license: INTERNAL
+    default_enabled: false
+    mode: internal_template
