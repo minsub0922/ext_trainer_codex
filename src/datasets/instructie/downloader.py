@@ -76,6 +76,10 @@ class InstructIEDownloader(DatasetDownloader):
         else:
             raise TypeError(f"Unsupported dataset object: {type(dataset_obj).__name__}")
 
+        stale_raw_file = self.root_dir / "instructie_raw.json"
+        if stale_raw_file.exists():
+            stale_raw_file.unlink()
+
         return DownloadResult(
             dataset_name=self.dataset_name,
             target_dir=self.root_dir,

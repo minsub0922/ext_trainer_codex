@@ -13,12 +13,32 @@ from src.datasets.instructie.converter import convert_instructie_rows
 from src.datasets.instructie.parser import parse_instructie_record
 
 
+def _candidate_split_files(directory: Path) -> list[Path]:
+    return sorted(path for path in directory.glob("*.jsonl") if path.is_file())
+
+
+def _resolve_stale_html_input(path: Path, split: str | None) -> tuple[Path | None, list[Path]]:
+    candidates = _candidate_split_files(path.parent)
+    if not candidates:
+        return None, []
+    if split:
+        split_match = path.parent / f"{split}.jsonl"
+        if split_match.exists():
+            return split_match, candidates
+    train_match = path.parent / "train.jsonl"
+    if train_match.exists():
+        return train_match, candidates
+    if len(candidates) == 1:
+        return candidates[0], candidates
+    return None, candidates
+
+
 def load_rows(path: Path, split: str | None) -> list[dict]:
     if not path.exists():
         raise FileNotFoundError(
             f"Input file not found: {path}. "
             "Check the filename and prefer the real downloaded asset path, for example "
-            "'data/raw/instructie/instructie_raw.json'."
+            "'data/raw/instructie/train.jsonl'."
         )
     if path.suffix == ".jsonl":
         rows = read_jsonl(path)
@@ -27,10 +47,20 @@ def load_rows(path: Path, split: str | None) -> list[dict]:
             payload = read_json(path)
         except json.JSONDecodeError as exc:
             preview = path.read_text(encoding="utf-8", errors="ignore")[:200].strip().replace("\n", " ")
+            resolved_path, candidates = _resolve_stale_html_input(path, split)
+            if resolved_path is not None:
+                print(
+                    f"Input {path} is a stale HTML page. "
+                    f"Falling back to detected dataset split file: {resolved_path}"
+                )
+                return load_rows(resolved_path, split)
+            candidate_text = ", ".join(str(candidate) for candidate in candidates) if candidates else "none found"
             raise ValueError(
                 f"Input file is not valid JSON: {path}. "
                 f"Preview: {preview!r}. "
-                "This usually means the downloader saved an HTML page instead of a raw dataset asset."
+                "This usually means the downloader saved an HTML page instead of a raw dataset asset. "
+                f"Detected sibling JSONL files: {candidate_text}. "
+                "Prefer a real split file such as 'data/raw/instructie/train.jsonl'."
             ) from exc
         rows = payload if isinstance(payload, list) else payload.get("data", [])
     if not isinstance(rows, list):
