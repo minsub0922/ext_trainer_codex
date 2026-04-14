@@ -18,12 +18,26 @@ def _normalize_relation(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _normalize_entity(item: dict[str, Any]) -> dict[str, Any]:
+def _infer_span(text: str, mention: str) -> tuple[int, int]:
+    if not text or not mention:
+        return 0, 0
+    start = text.find(mention)
+    if start < 0:
+        return 0, 0
+    return start, start + len(mention)
+
+
+def _normalize_entity(item: dict[str, Any], text: str) -> dict[str, Any]:
+    mention = item.get("text") or item.get("mention") or item.get("entity") or ""
+    start = int(item.get("start", 0) or 0)
+    end = int(item.get("end", 0) or 0)
+    if end <= start:
+        start, end = _infer_span(text, mention)
     return {
-        "text": item.get("text") or item.get("mention") or "",
-        "type": item.get("type") or item.get("label") or "",
-        "start": int(item.get("start", 0)),
-        "end": int(item.get("end", 0)),
+        "text": mention,
+        "type": item.get("type") or item.get("label") or item.get("entity_type") or "",
+        "start": start,
+        "end": end,
     }
 
 
@@ -42,7 +56,7 @@ def parse_instructie_record(payload: dict[str, Any], default_split: str | None =
         "lang": payload.get("lang") or payload.get("language") or "en",
         "source": "instructie",
         "split": payload.get("split") or default_split,
-        "entity_annotations": [_normalize_entity(item) for item in entities],
+        "entity_annotations": [_normalize_entity(item, text) for item in entities],
         "relation_annotations": [_normalize_relation(item) for item in relations],
         "entity_schema": [item for item in entity_schema if item],
         "relation_schema": [item for item in relation_schema if item],

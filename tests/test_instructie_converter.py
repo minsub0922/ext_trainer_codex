@@ -65,3 +65,18 @@ def test_instructie_reader_accepts_ndjson_with_json_suffix(tmp_path) -> None:
     raw_file.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
     loaded = InstructIEDownloader._read_raw_rows(raw_file)
     assert len(loaded) == 2
+
+
+def test_instructie_parser_infers_missing_entity_spans() -> None:
+    parsed = parse_instructie_record(
+        {
+            "id": "1",
+            "text": "Alice joined Contoso.",
+            "entity": [{"entity": "Alice", "entity_type": "PERSON"}],
+            "relation": [],
+        },
+        default_split="train",
+    )
+    converted = convert_instructie_record(parsed)
+    assert converted.answer.entity[0].start == 0
+    assert converted.answer.entity[0].end == 5

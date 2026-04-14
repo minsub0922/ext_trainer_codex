@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from pydantic import ValidationError
 
 from src.common.io import sha1_text
 from src.common.schema import (
@@ -15,9 +16,21 @@ from src.common.schema import (
 )
 
 
+def _safe_entity_annotations(items: list[dict[str, Any]]) -> list[EntityAnnotation]:
+    entities: list[EntityAnnotation] = []
+    for item in items:
+        if not item:
+            continue
+        try:
+            entities.append(EntityAnnotation.model_validate(item))
+        except ValidationError:
+            continue
+    return entities
+
+
 def convert_instructie_record(payload: dict[str, Any]) -> CanonicalExample:
     task_types: list[str] = []
-    entities = [EntityAnnotation.model_validate(item) for item in payload.get("entity_annotations", []) if item]
+    entities = _safe_entity_annotations(payload.get("entity_annotations", []))
     relations = [RelationAnnotation.model_validate(item) for item in payload.get("relation_annotations", []) if item]
     if entities:
         task_types.append("entity")
