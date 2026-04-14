@@ -10,6 +10,7 @@ from pathlib import Path
 from src.common.io import read_json, read_jsonl, write_jsonl
 from src.common.schema import compute_dataset_stats
 from src.datasets.instructie.converter import convert_instructie_rows
+from src.datasets.instructie.downloader import InstructIEDownloader
 from src.datasets.instructie.parser import parse_instructie_record
 
 
@@ -33,6 +34,19 @@ def _resolve_stale_html_input(path: Path, split: str | None) -> tuple[Path | Non
     return None, candidates
 
 
+def _bootstrap_instructie_split(directory: Path, split: str | None) -> Path | None:
+    desired_split = split or "train"
+    downloader = InstructIEDownloader(
+        root_dir=directory,
+        dataset_id="zjunlp/InstructIE",
+        split=desired_split,
+    )
+    result = downloader.run(dry_run=False)
+    print(result.message)
+    target = directory / f"{desired_split}.jsonl"
+    return target if target.exists() else None
+
+
 def load_rows(path: Path, split: str | None) -> list[dict]:
     if not path.exists():
         raise FileNotFoundError(
@@ -54,6 +68,15 @@ def load_rows(path: Path, split: str | None) -> list[dict]:
                     f"Falling back to detected dataset split file: {resolved_path}"
                 )
                 return load_rows(resolved_path, split)
+            if path.name == "instructie_raw.json":
+                print(
+                    f"Input {path} is a stale HTML page and no local split files were found. "
+                    "Attempting to download the requested InstructIE split via Hugging Face datasets."
+                )
+                bootstrapped_path = _bootstrap_instructie_split(path.parent, split)
+                if bootstrapped_path is not None:
+                    print(f"Recovered by downloading split file: {bootstrapped_path}")
+                    return load_rows(bootstrapped_path, split)
             candidate_text = ", ".join(str(candidate) for candidate in candidates) if candidates else "none found"
             raise ValueError(
                 f"Input file is not valid JSON: {path}. "
