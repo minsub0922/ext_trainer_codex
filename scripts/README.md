@@ -6,10 +6,10 @@ All scripts are small CLIs around the modules in `src/`. The canonical schema is
 
 - `scripts/download/download_instructie.py`
   Purpose: stage InstructIE raw files and write dataset metadata notes.
-  Args: `--output`, `--source-url`, `--dry-run`
-  Example: `python scripts/download/download_instructie.py --dry-run`
+  Args: `--output`, `--source-url`, `--dataset-id`, `--config-name`, `--split`, `--dry-run`
+  Example: `python scripts/download/download_instructie.py --dataset-id zjunlp/InstructIE`
   Output: note file and optionally raw asset under `data/raw/instructie/`
-  Note: `--source-url` must be a direct JSON/JSONL asset URL, not a dataset landing page.
+  Note: Hugging Face dataset page URLs are detected and downloaded through the `datasets` library path.
 
 - `scripts/download/download_reference_gollie_assets.py`
   Purpose: create a reference-only note for GoLLIE-inspired assets.
@@ -22,7 +22,7 @@ All scripts are small CLIs around the modules in `src/`. The canonical schema is
 
 - `scripts/preprocess/normalize_instructie.py`
   Purpose: convert raw InstructIE JSON/JSONL into canonical JSONL.
-  Example: `python scripts/preprocess/normalize_instructie.py --input data/raw/instructie/instructie_raw.json --output data/processed/instructie_canonical.jsonl --split train`
+  Example: `python scripts/preprocess/normalize_instructie.py --input data/raw/instructie/train.jsonl --output data/processed/instructie_canonical.jsonl --split train`
 
 - `scripts/preprocess/build_internal_kv_template.py`
   Purpose: generate annotation-ready K/V skeletons from CSV/JSONL.
