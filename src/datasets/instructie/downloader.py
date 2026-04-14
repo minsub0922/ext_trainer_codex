@@ -67,7 +67,13 @@ class InstructIEDownloader(DatasetDownloader):
         if path.suffix.lower() == ".jsonl":
             return read_jsonl(path)
         if path.suffix.lower() == ".json":
-            payload = read_json(path)
+            try:
+                payload = read_json(path)
+            except json.JSONDecodeError as exc:
+                # Some upstream files use a .json suffix but are actually JSONL / NDJSON.
+                if "Extra data" in str(exc):
+                    return read_jsonl(path)
+                raise
             if isinstance(payload, list):
                 return payload
             if isinstance(payload, dict):

@@ -2,6 +2,7 @@ import json
 
 import scripts.preprocess.normalize_instructie as normalize_instructie
 from scripts.preprocess.normalize_instructie import load_rows
+from src.datasets.instructie.downloader import InstructIEDownloader
 from src.datasets.instructie.converter import convert_instructie_record
 from src.datasets.instructie.parser import parse_instructie_record
 
@@ -53,3 +54,14 @@ def test_normalizer_bootstraps_hf_download_when_only_stale_html_exists(tmp_path,
     monkeypatch.setattr(normalize_instructie, "_bootstrap_instructie_split", fake_bootstrap)
     loaded = load_rows(stale_file, "train")
     assert loaded[0]["id"] == "1"
+
+
+def test_instructie_reader_accepts_ndjson_with_json_suffix(tmp_path) -> None:
+    raw_file = tmp_path / "train_like.json"
+    rows = [
+        {"id": "1", "text": "Alice joined Contoso.", "relations": []},
+        {"id": "2", "text": "Bob joined Fabrikam.", "relations": []},
+    ]
+    raw_file.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    loaded = InstructIEDownloader._read_raw_rows(raw_file)
+    assert len(loaded) == 2
