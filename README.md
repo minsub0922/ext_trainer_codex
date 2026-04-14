@@ -155,11 +155,13 @@ python scripts/download/download_instructie.py \
   --source-url "<verified_instructie_asset_url>"
 ```
 
+Use a direct JSON or JSONL asset URL here, not the Hugging Face dataset landing page URL.
+
 ### 2. Normalize InstructIE to canonical JSONL
 
 ```bash
 python scripts/preprocess/normalize_instructie.py \
-  --input data/raw/instructie/sample.json \
+  --input data/raw/instructie/instructie_raw.json \
   --output data/processed/instructie_canonical.jsonl \
   --split train
 ```

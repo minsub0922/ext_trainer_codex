@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 from src.common.io import read_json, read_jsonl, write_jsonl
@@ -13,11 +14,27 @@ from src.datasets.instructie.parser import parse_instructie_record
 
 
 def load_rows(path: Path, split: str | None) -> list[dict]:
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Input file not found: {path}. "
+            "Check the filename and prefer the real downloaded asset path, for example "
+            "'data/raw/instructie/instructie_raw.json'."
+        )
     if path.suffix == ".jsonl":
         rows = read_jsonl(path)
     else:
-        payload = read_json(path)
+        try:
+            payload = read_json(path)
+        except json.JSONDecodeError as exc:
+            preview = path.read_text(encoding="utf-8", errors="ignore")[:200].strip().replace("\n", " ")
+            raise ValueError(
+                f"Input file is not valid JSON: {path}. "
+                f"Preview: {preview!r}. "
+                "This usually means the downloader saved an HTML page instead of a raw dataset asset."
+            ) from exc
         rows = payload if isinstance(payload, list) else payload.get("data", [])
+    if not isinstance(rows, list):
+        raise ValueError(f"Expected a list-like dataset payload in {path}, got {type(rows).__name__}.")
     return [parse_instructie_record(row, default_split=split) for row in rows]
 
 

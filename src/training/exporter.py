@@ -21,14 +21,14 @@ def build_instruction(example: CanonicalExample, mode: str) -> tuple[str, str, s
 
     instruction = (
         f"{task_modes[mode]} Return strict JSON only.\n"
-        + schema_prompt(example.schema.model_dump(mode="json"))
+        + schema_prompt(example.schema_.model_dump(mode="json"))
     )
     user_input = json.dumps(
         {
             "text": example.text,
             "lang": example.lang,
             "task_types": example.task_types,
-            "schema": example.schema.model_dump(mode="json"),
+            "schema": example.schema_.model_dump(mode="json"),
         },
         ensure_ascii=False,
     )

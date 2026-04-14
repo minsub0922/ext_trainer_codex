@@ -9,6 +9,7 @@ All scripts are small CLIs around the modules in `src/`. The canonical schema is
   Args: `--output`, `--source-url`, `--dry-run`
   Example: `python scripts/download/download_instructie.py --dry-run`
   Output: note file and optionally raw asset under `data/raw/instructie/`
+  Note: `--source-url` must be a direct JSON/JSONL asset URL, not a dataset landing page.
 
 - `scripts/download/download_reference_gollie_assets.py`
   Purpose: create a reference-only note for GoLLIE-inspired assets.
@@ -21,7 +22,7 @@ All scripts are small CLIs around the modules in `src/`. The canonical schema is
 
 - `scripts/preprocess/normalize_instructie.py`
   Purpose: convert raw InstructIE JSON/JSONL into canonical JSONL.
-  Example: `python scripts/preprocess/normalize_instructie.py --input data/raw/instructie/sample.json --output data/processed/instructie_canonical.jsonl --split train`
+  Example: `python scripts/preprocess/normalize_instructie.py --input data/raw/instructie/instructie_raw.json --output data/processed/instructie_canonical.jsonl --split train`
 
 - `scripts/preprocess/build_internal_kv_template.py`
   Purpose: generate annotation-ready K/V skeletons from CSV/JSONL.

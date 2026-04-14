@@ -64,14 +64,14 @@ class CanonicalMeta(BaseModel):
 
 
 class CanonicalExample(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     id: str
     text: str
     lang: str
     source: str
     task_types: list[TaskType]
-    schema: CanonicalSchemaSpec
+    schema_: CanonicalSchemaSpec = Field(alias="schema", serialization_alias="schema")
     answer: CanonicalAnswer = Field(default_factory=CanonicalAnswer)
     meta: CanonicalMeta
 
@@ -89,7 +89,7 @@ class CanonicalExample(BaseModel):
     def validate_contract(self) -> "CanonicalExample":
         task_set = set(self.task_types)
         if "kv" in task_set:
-            missing_keys = [key for key in self.schema.kv if key not in self.answer.kv]
+            missing_keys = [key for key in self.schema_.kv if key not in self.answer.kv]
             if missing_keys:
                 for key in missing_keys:
                     self.answer.kv[key] = None

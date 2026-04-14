@@ -57,6 +57,14 @@ class InstructIEDownloader(DatasetDownloader):
         target_file = self.root_dir / "instructie_raw.json"
         response = requests.get(self.source_url, timeout=60)
         response.raise_for_status()
+        content_type = response.headers.get("content-type", "").lower()
+        preview = response.text[:512].lstrip() if response.text else ""
+        if "text/html" in content_type or preview.startswith("<!DOCTYPE html") or preview.startswith("<html"):
+            raise ValueError(
+                "The provided --source-url returned an HTML page, not a raw JSON/JSONL asset. "
+                "If you used a Hugging Face dataset page URL, download the real data files first "
+                "and place them under data/raw/instructie/."
+            )
         target_file.write_bytes(response.content)
         return DownloadResult(
             dataset_name=self.dataset_name,
