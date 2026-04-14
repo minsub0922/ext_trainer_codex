@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 import textwrap
 from pathlib import Path
+from typing import Any
 
 import requests
 
+from src.common.io import read_json, read_jsonl, write_jsonl
 from src.datasets.downloader_base import DatasetDownloader, DownloadResult
 from src.datasets.metadata import DatasetNote
 
@@ -47,34 +49,90 @@ class InstructIEDownloader(DatasetDownloader):
         if marker not in source_url:
             return None
         suffix = source_url.split(marker, 1)[1].strip("/")
-        return suffix.split("/", 1)[0] if "/" not in suffix else suffix
+        return suffix.split("/tree/", 1)[0].split("/resolve/", 1)[0]
+
+    @staticmethod
+    def _normalize_split_name(name: str) -> str:
+        lowered = name.lower()
+        if "train" in lowered:
+            return "train"
+        if "valid" in lowered or "dev" in lowered:
+            return "dev"
+        if "test" in lowered:
+            return "test"
+        return "other"
+
+    @staticmethod
+    def _read_raw_rows(path: Path) -> list[dict[str, Any]]:
+        if path.suffix.lower() == ".jsonl":
+            return read_jsonl(path)
+        if path.suffix.lower() == ".json":
+            payload = read_json(path)
+            if isinstance(payload, list):
+                return payload
+            if isinstance(payload, dict):
+                for key in ("data", "examples", "items"):
+                    if isinstance(payload.get(key), list):
+                        return payload[key]
+            raise ValueError(f"Unsupported JSON structure in {path}")
+        raise ValueError(f"Unsupported raw file format: {path}")
 
     def _download_via_hf_datasets(self, dataset_id: str) -> DownloadResult:
         try:
-            from datasets import Dataset, DatasetDict, load_dataset
+            from huggingface_hub import hf_hub_download, list_repo_files
         except ImportError as exc:
             raise ImportError(
-                "The 'datasets' package is required for Hugging Face dataset downloads. "
+                "The 'huggingface_hub' package is required for Hugging Face dataset downloads. "
                 "Install dependencies with 'pip install -r requirements.txt'."
             ) from exc
 
-        dataset_obj = load_dataset(dataset_id, self.config_name)
+        repo_files = list_repo_files(repo_id=dataset_id, repo_type="dataset")
+        candidate_files = [
+            file_name
+            for file_name in repo_files
+            if file_name.lower().endswith((".json", ".jsonl")) and not Path(file_name).name.startswith(".")
+        ]
+        if not candidate_files:
+            raise FileNotFoundError(f"No JSON/JSONL files found in Hugging Face dataset repo '{dataset_id}'.")
+
+        split_buckets: dict[str, list[dict[str, Any]]] = {"train": [], "dev": [], "test": []}
+        downloaded_files: list[str] = []
+        desired_split = self._normalize_split_name(self.split or "train") if self.split else None
+        for file_name in candidate_files:
+            normalized_split = self._normalize_split_name(file_name)
+            if desired_split and normalized_split != desired_split:
+                continue
+            if normalized_split == "other":
+                continue
+            local_path = Path(
+                hf_hub_download(
+                    repo_id=dataset_id,
+                    repo_type="dataset",
+                    filename=file_name,
+                )
+            )
+            rows = self._read_raw_rows(local_path)
+            split_buckets[normalized_split].extend(rows)
+            downloaded_files.append(file_name)
+
         saved_files: list[str] = []
-        if isinstance(dataset_obj, DatasetDict):
-            split_names = [self.split] if self.split else list(dataset_obj.keys())
-            for split_name in split_names:
-                if split_name not in dataset_obj:
-                    raise KeyError(f"Split '{split_name}' not found in dataset '{dataset_id}'.")
-                target = self.root_dir / f"{split_name}.jsonl"
-                self._write_hf_split_jsonl(dataset_obj[split_name], target)
-                saved_files.append(str(target))
-        elif isinstance(dataset_obj, Dataset):
-            split_name = self.split or "train"
+        for split_name, rows in split_buckets.items():
+            if not rows:
+                continue
             target = self.root_dir / f"{split_name}.jsonl"
-            self._write_hf_split_jsonl(dataset_obj, target)
+            write_jsonl(target, rows)
             saved_files.append(str(target))
-        else:
-            raise TypeError(f"Unsupported dataset object: {type(dataset_obj).__name__}")
+
+        if desired_split and not split_buckets[desired_split]:
+            raise FileNotFoundError(
+                f"No raw files matching split '{desired_split}' were found in dataset '{dataset_id}'. "
+                f"Candidate files inspected: {', '.join(candidate_files)}"
+            )
+        if not saved_files:
+            raise FileNotFoundError(
+                f"Could not materialize any split files from dataset '{dataset_id}'. "
+                f"Candidate files inspected: {', '.join(candidate_files)}"
+            )
 
         stale_raw_file = self.root_dir / "instructie_raw.json"
         if stale_raw_file.exists():
@@ -85,17 +143,11 @@ class InstructIEDownloader(DatasetDownloader):
             target_dir=self.root_dir,
             downloaded=True,
             message=(
-                f"Downloaded Hugging Face dataset '{dataset_id}' into {self.root_dir}. "
-                f"Saved split files: {', '.join(saved_files)}"
+                f"Downloaded raw Hugging Face dataset files from '{dataset_id}' into {self.root_dir}. "
+                f"Aggregated files: {', '.join(saved_files)}. "
+                f"Source files: {', '.join(downloaded_files)}"
             ),
         )
-
-    @staticmethod
-    def _write_hf_split_jsonl(dataset_split: object, target: Path) -> None:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        with target.open("w", encoding="utf-8") as handle:
-            for row in dataset_split:
-                handle.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     def run(self, dry_run: bool = False) -> DownloadResult:
         note_path = self.root_dir / "README.instructie.txt"
